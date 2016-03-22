@@ -3,6 +3,7 @@
 #
 import os
 
+import re
 from django.conf import settings
 from django.core.files.base import File
 from django.core.exceptions import ImproperlyConfigured
@@ -59,7 +60,11 @@ class LibCloudStorage(Storage):
 
     def _clean_name(self, name):
         """Clean name (windows directories)"""
-        return os.path.normpath(name).replace('\\', '/')
+        clean_name = os.path.normpath(name).replace('\\', '/')
+        # normpath() converts `/path/` to `/path/.`, which is invalid on GCE.
+        clean_name = re.sub('/\.$', '/', clean_name)
+        clean_name = re.sub('^.$', '', clean_name)
+        return clean_name
 
     def _get_object(self, name):
         """Get object by its name. Return None if object not found"""
